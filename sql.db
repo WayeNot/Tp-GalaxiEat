@@ -140,3 +140,19 @@ SELECT * FROM Employees WHERE LastName LIKE 'A%';
 
 -- Créer un classement des restaurants par ancienneté :
 SELECT Name, Opening_year FROM Restaurants ORDER BY Opening_year ASC;
+
+-- Points bonus :
+
+-- Table Ingredients
+CREATE TABLE Ingredients (
+    IdIngredient INTEGER PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL,
+);
+
+-- Table de liaison entre Dishes et Ingredients
+CREATE TABLE DishIngredients (
+    IdDishIngredient INTEGER PRIMARY KEY,
+    IdDishes INT NOT NULL,
+    IdIngredient INT NOT NULL,
+    Quantity VARCHAR(50),
+);

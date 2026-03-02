@@ -1,0 +1,142 @@
+-- Table Restaurants
+CREATE TABLE Restaurants (
+    IdRestaurant INTEGER PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL,
+    Planet VARCHAR(50) NOT NULL,
+    Opening_year DATE NOT NULL
+);
+
+-- Table Employees
+CREATE TABLE Employees (
+    IdEmployees INTEGER PRIMARY KEY,
+    Firstname VARCHAR(50) NOT NULL,
+    Lastname VARCHAR(50) NOT NULL,
+    Role VARCHAR(50) NOT NULL,
+    IdRestaurant INT NOT NULL
+);
+
+-- Table Dishes
+CREATE TABLE Dishes (
+    IdDishes INTEGER PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL,
+    Price FLOAT,
+    Category VARCHAR(50) NOT NULL
+);
+
+-- Table Orders
+CREATE TABLE Orders (
+    IdOrders INTEGER PRIMARY KEY,
+    IdRestaurant INT NOT NULL,
+    Total_amount FLOAT NOT NULL,
+    Customer_name VARCHAR(50)
+);
+
+-- Table OrderItems
+CREATE TABLE OrderItems (
+    IdOrderItems INTEGER PRIMARY KEY,
+    IdOrders INT NOT NULL,
+    IdDishes INT NOT NULL,
+    Quantity INT NOT NULL
+);
+
+-- Ajouts et modifications de colonnes
+
+-- Ajouter à Employées la colonne hire_date :
+ALTER TABLE Employees ADD COLUMN hire_date DATE;
+
+-- Ajouter à Dishes la colonne : is_vegan ( NULL possible ) :
+ALTER TABLE Dishes ADD COLUMN is_vegan BOOLEAN;
+
+-- Renommer la table Orders → CustomerOrders :
+ALTER TABLE Orders RENAME TO CustomerOrders;
+
+-- Insérer de la donnée (libre de choix) :
+INSERT INTO Restaurants ( Name, Planet, Opening_year ) VALUES ( 'Milky Way Diner', 'Earth', '2025-01-01' );
+INSERT INTO Dishes ( Name, Price, Category, is_vegan ) VALUES ( 'Burger d’Astéroïde', 12.5, 'Burgers', FALSE );
+INSERT INTO Employees ( FirstName, LastName, Role, IdRestaurant ) VALUES ( 'Zorglub', 'Test', 'Chef cuisinier', 1 );
+
+-- Premières requêtes
+
+-- Lister tous les restaurants de la galaxie :
+SELECT * FROM Restaurants;
+
+-- Lister tous les plats classés par prix décroissant :
+SELECT * FROM Dishes ORDER BY Price DESC;
+
+-- Lister tous les employés triés par rôle :
+SELECT * FROM Employees ORDER BY Role;
+
+-- Lister tous les plats végétariens :
+SELECT * FROM Dishes WHERE is_vegan = TRUE;
+
+-- Lister les plats dont le prix est supérieur à la moyenne des prix :
+SELECT * FROM Dishes WHERE Price > (SELECT AVG(Price) FROM Dishes);
+
+-- Gestion des null
+
+-- Trouver les plats dont le champ is_vegan n’a pas encore été rempli.
+SELECT * FROM Dishes WHERE is_vegan IS NULL;
+
+
+-- Trouver les employés dont la hire_date est NULL.
+SELECT * FROM Employees WHERE hire_date IS NULL;
+
+-- Création et gestion des commandes
+
+-- Insérer 3 commandes dans différents restaurants :
+INSERT INTO CustomerOrders (IdOrders, IdRestaurant, Total_amount, Customer_name) VALUES (1, 1, 20, 'Fish');
+INSERT INTO CustomerOrders (IdOrders, IdRestaurant, Total_amount, Customer_name) VALUES (2, 1, 10, 'fries');
+INSERT INTO CustomerOrders (IdOrders, IdRestaurant, Total_amount, Customer_name) VALUES (3, 1, 7, 'Ice');
+
+-- Ajouter des OrderItems associés : 
+INSERT INTO OrderItems ( IdOrders, IdDishes, Quantity ) VALUES (1, 2, 1);
+INSERT INTO OrderItems ( IdOrders, IdDishes, Quantity ) VALUES (2, 3, 1);
+INSERT INTO OrderItems ( IdOrders, IdDishes, Quantity ) VALUES (3, 4, 1);
+
+-- Calculer pour chaque commande : (Nombre total d’articles / montant total) :
+SELECT co.IdOrders, SUM(oi.Quantity) AS total_articles, co.Total_amount FROM CustomerOrders co JOIN OrderItems oi ON co.IdOrders = oi.IdOrders GROUP BY co.IdOrders, co.Total_amount;
+
+-- Lister les commandes triées par montant décroissant :
+SELECT * FROM CustomerOrders ORDER BY Total_amount DESC;
+
+-- Jointures
+
+-- Liste des employés avec le nom de leur restaurant :
+SELECT e.*, r.Name AS Restaurant_Name FROM Employees e INNER JOIN Restaurants r ON e.IdRestaurant = r.IdRestaurant;
+
+-- Liste des plats commandés avec : (name (Dishes) / (name of customers) / planète (Restaurant))
+SELECT d.Name AS Dish_Name, co.Customer_name, r.Planet FROM OrderItems oi JOIN Dishes d ON oi.IdDishes = d.IdDishes JOIN CustomerOrders co ON oi.IdOrders = co.IdOrders JOIN Restaurants r ON co.IdRestaurant = r.IdRestaurant;
+
+-- Lister tous les restaurants avec leur nombre d’employés.
+SELECT r.Name, COUNT(e.IdRestaurant) AS employee_Count FROM Restaurants r LEFT JOIN Employees e ON r.IdRestaurant = e.IdRestaurant GROUP BY r.IdRestaurant, r.Name;
+
+-- Mise à jour intelligente
+-- Le PDG veut appliquer une réduction exceptionnelle : Si le plat coûte > 12 → réduction de 10% Sinon → réduction de 5%
+UPDATE Dishes SET Price = CASE WHEN Price > 12 THEN Price * 0.90 ELSE Price * 0.95 END;
+
+-- Suppressions
+
+-- Supprimer tous les plats à prix NULL (si existant) :
+DELETE FROM Dishes WHERE Price IS NULL;
+
+-- Supprimer les commandes de test dont le total est inférieur à 5 :
+DELETE FROM CustomerOrders WHERE Total_amount < 5;
+
+-- Mini-analyse finale
+
+-- Prix moyen des plats par catégorie :
+SELECT category, AVG(price) FROM Dishes GROUP BY category;
+
+-- Montant total des ventes :
+SELECT SUM(Total_amount) FROM CustomerOrders;
+
+-- Les 3 plats les plus chers :
+SELECT * FROM Dishes ORDER BY Price DESC LIMIT 3;
+
+-- Les employés dont le nom contient la lettre 'a' :
+SELECT * FROM Employees WHERE LastName LIKE 'A%';
+
+-- Bonus :
+
+-- Créer un classement des restaurants par ancienneté :
+SELECT Name, Opening_year FROM Restaurants ORDER BY Opening_year ASC;
